@@ -74,6 +74,14 @@ pub enum GFX_LAYER
 
 	/// Skia backend with OpenGL rendering.
 	SKIA_OPENGL = 5,
+  /// vulkan
+  SKIA_VULKAN = 6,
+  #[cfg(osx)]
+  SKIA_METAL = 7,
+  #[cfg(windows)]
+  SKIA_DX12 = 8,
+  // auto
+  SKIA_GPU = 9,  
 }
 
 #[repr(C)]

@@ -225,7 +225,7 @@ mod ext {
   pub static mut CUSTOM_DLL_PATH: Option<String> = None;
 
   #[cfg(target_os = "linux")]
-  const DLL_NAMES: &[&str] = &[ "libsciter-gtk.so" ];
+  const DLL_NAMES: &[&str] = &[ "libsciter.so" ];
 
 	// "libsciter.dylib" since Sciter 4.4.6.3.
   #[cfg(target_os = "macos")]

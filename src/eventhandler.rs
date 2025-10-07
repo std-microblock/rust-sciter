@@ -17,7 +17,7 @@ pub(crate) struct BoxedHandler {
 }
 
 fn is_detach_event(evtg: UINT, params: LPVOID) -> bool {
-	let evtg : EVENT_GROUPS = unsafe { ::std::mem::transmute(evtg) };
+	let evtg : EVENT_GROUPS = EVENT_GROUPS::from_bits_truncate(evtg);
 	if evtg == EVENT_GROUPS::HANDLE_INITIALIZATION {
 		assert!(!params.is_null());
 		let scnm = params as *const INITIALIZATION_EVENTS;
@@ -94,14 +94,14 @@ pub(crate) extern "system" fn _event_handler_proc<T: EventHandler>(tag: LPVOID, 
 
 fn process_events(me: &mut dyn EventHandler, he: HELEMENT, evtg: UINT, params: LPVOID) -> BOOL
 {
-	let evtg : EVENT_GROUPS = unsafe { ::std::mem::transmute(evtg) };
+	let evtg : EVENT_GROUPS = EVENT_GROUPS::from_bits_truncate(evtg);
 	if he.is_null()
 		&& evtg != EVENT_GROUPS::SUBSCRIPTIONS_REQUEST
 		&& evtg != EVENT_GROUPS::HANDLE_BEHAVIOR_EVENT
 		&& evtg != EVENT_GROUPS::HANDLE_INITIALIZATION
 		&& evtg != EVENT_GROUPS::HANDLE_SOM
 	{
-		eprintln!("[sciter] warning! null element for {:04X}", evtg as u32);
+		eprintln!("[sciter] warning! null element for {:04X}", evtg.bits());
 	}
 
 	let result = match evtg {
@@ -312,7 +312,7 @@ fn process_events(me: &mut dyn EventHandler, he: HELEMENT, evtg: UINT, params: L
 
 		// unknown `EVENT_GROUPS` notification
 		_ => {
-			eprintln!("[sciter] warning! unknown event group {:04X}", evtg as u32);
+			eprintln!("[sciter] warning! unknown event group {:04X}", evtg.bits());
 			false
 		},
 	};

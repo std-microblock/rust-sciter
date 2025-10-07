@@ -158,54 +158,54 @@ pub enum DRAW_EVENTS {
 
 
 /// Event groups for subscription.
-#[repr(C)]
-#[derive(Copy, Clone)]
-#[derive(Debug, PartialOrd, PartialEq)]
-pub enum EVENT_GROUPS
-{ /// Attached/detached.
-	HANDLE_INITIALIZATION = 0x0000,
-	/// Mouse events.
-	HANDLE_MOUSE = 0x0001,
-	/// Key events.
-	HANDLE_KEY = 0x0002,
-	/// Focus events, if this flag is set it also means that element it attached to is focusable.
-	HANDLE_FOCUS = 0x0004,
-	/// Scroll events.
-	HANDLE_SCROLL = 0x0008,
-	/// Timer event.
-	HANDLE_TIMER = 0x0010,
-	/// Size changed event.
-	HANDLE_SIZE = 0x0020,
-	/// Drawing request (event).
-	HANDLE_DRAW = 0x0040,
-	/// Requested data has been delivered.
-	HANDLE_DATA_ARRIVED = 0x080,
+bitflags! {
+    #[repr(C)]
+    pub struct EVENT_GROUPS: u32 {
+        /// Attached/detached.
+        const HANDLE_INITIALIZATION = 0x0000;
+        /// Mouse events.
+        const HANDLE_MOUSE = 0x0001;
+        /// Key events.
+        const HANDLE_KEY = 0x0002;
+        /// Focus events, if this flag is set it also means that element it attached to is focusable.
+        const HANDLE_FOCUS = 0x0004;
+        /// Scroll events.
+        const HANDLE_SCROLL = 0x0008;
+        /// Timer event.
+        const HANDLE_TIMER = 0x0010;
+        /// Size changed event.
+        const HANDLE_SIZE = 0x0020;
+        /// Drawing request (event).
+        const HANDLE_DRAW = 0x0040;
+        /// Requested data has been delivered.
+        const HANDLE_DATA_ARRIVED = 0x0080;
 
-	/// Logical, synthetic events:
-  /// `BUTTON_CLICK`, `HYPERLINK_CLICK`, etc.,
-	/// a.k.a. notifications from intrinsic behaviors.
-	HANDLE_BEHAVIOR_EVENT        = 0x0100,
-	 /// Behavior specific methods.
-	HANDLE_METHOD_CALL           = 0x0200,
-	/// Behavior specific methods.
-	HANDLE_SCRIPTING_METHOD_CALL = 0x0400,
+        /// Logical, synthetic events:
+        /// `BUTTON_CLICK`, `HYPERLINK_CLICK`, etc.,
+        /// a.k.a. notifications from intrinsic behaviors.
+        const HANDLE_BEHAVIOR_EVENT = 0x0100;
+        /// Behavior specific methods.
+        const HANDLE_METHOD_CALL = 0x0200;
+        /// Behavior specific methods.
+        const HANDLE_SCRIPTING_METHOD_CALL = 0x0400;
 
-	/// Behavior specific methods using direct `tiscript::value`'s.
-	#[deprecated(since="Sciter 4.4.3.24", note="TIScript native API is gone, use SOM instead.")]
-	HANDLE_TISCRIPT_METHOD_CALL  = 0x0800,
+        /// Behavior specific methods using direct `tiscript::value`'s.
+        #[deprecated(since="Sciter 4.4.3.24", note="TIScript native API is gone, use SOM instead.")]
+        const HANDLE_TISCRIPT_METHOD_CALL = 0x0800;
 
-	/// System drag-n-drop.
-	HANDLE_EXCHANGE              = 0x1000,
-	/// Touch input events.
-	HANDLE_GESTURE               = 0x2000,
-	/// SOM passport and asset requests.
-	HANDLE_SOM                   = 0x8000,
+        /// System drag-n-drop.
+        const HANDLE_EXCHANGE = 0x1000;
+        /// Touch input events.
+        const HANDLE_GESTURE = 0x2000;
+        /// SOM passport and asset requests.
+        const HANDLE_SOM = 0x8000;
 
-	/// All of them.
-	HANDLE_ALL                   = 0xFFFF,
+        /// All of them.
+        const HANDLE_ALL = 0xFFFF;
 
-	/// Special value for getting subscription flags.
-	SUBSCRIPTIONS_REQUEST        = -1,
+        /// Special value for getting subscription flags.
+        const SUBSCRIPTIONS_REQUEST = 0xFFFFFFFF; // since -1 as u32
+    }
 }
 
 #[repr(C)]
@@ -542,10 +542,3 @@ pub enum BEHAVIOR_EVENTS
 }
 
 
-impl ::std::ops::BitOr for EVENT_GROUPS {
-  type Output = EVENT_GROUPS;
-  fn bitor(self, rhs: Self::Output) -> Self::Output {
-    let rn = (self as UINT) | (rhs as UINT);
-    unsafe { ::std::mem::transmute(rn) }
-  }
-}

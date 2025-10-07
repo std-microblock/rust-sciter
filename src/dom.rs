@@ -492,14 +492,14 @@ impl Element {
 	pub fn get_state(&self) -> ELEMENT_STATE_BITS {
 		let mut rv = 0u32;
 		(_API.SciterGetElementState)(self.he, &mut rv as *mut _);
-		let state = unsafe { ::std::mem::transmute(rv) };
+		let state = ELEMENT_STATE_BITS::from_bits_truncate(rv);
 		return state;
 	}
 
 	/// Set UI state of the element with optional view update.
 	pub fn set_state(&mut self, set: ELEMENT_STATE_BITS, clear: Option<ELEMENT_STATE_BITS>, update: bool) -> Result<()> {
 		let clear = clear.unwrap_or(ELEMENT_STATE_BITS::STATE_NONE);
-		let ok = (_API.SciterSetElementState)(self.he, set as UINT, clear as UINT, update as BOOL);
+		let ok = (_API.SciterSetElementState)(self.he, set.bits() as UINT, clear.bits() as UINT, update as BOOL);
 		ok_or!((), ok)
 	}
 
@@ -1181,56 +1181,55 @@ impl ::std::fmt::Display for Element {
 impl ::std::fmt::Debug for Element {
 	fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
 		if f.alternate() {
-			use ::std::mem;
 
-			fn state_name(value: &ELEMENT_STATE_BITS) -> &'static str {
-				match *value {
-					ELEMENT_STATE_BITS::STATE_LINK => "link",
-					ELEMENT_STATE_BITS::STATE_HOVER => "hover",
-					ELEMENT_STATE_BITS::STATE_ACTIVE => "active",
-					ELEMENT_STATE_BITS::STATE_VISITED => "visited",
-					ELEMENT_STATE_BITS::STATE_FOCUS => "focus",
-					ELEMENT_STATE_BITS::STATE_POPUP => "popup",
-					ELEMENT_STATE_BITS::STATE_CURRENT => "current",
-					ELEMENT_STATE_BITS::STATE_CHECKED => "checked",
-					ELEMENT_STATE_BITS::STATE_EXPANDED => "expanded",
-					ELEMENT_STATE_BITS::STATE_COLLAPSED => "collapsed",
-					ELEMENT_STATE_BITS::STATE_DISABLED => "disabled",
-					ELEMENT_STATE_BITS::STATE_INCOMPLETE => "incomplete",
-					ELEMENT_STATE_BITS::STATE_BUSY => "busy",
-					ELEMENT_STATE_BITS::STATE_ANIMATING => "animating",
-					ELEMENT_STATE_BITS::STATE_FOCUSABLE => "",
-					ELEMENT_STATE_BITS::STATE_READONLY => "readonly",
-					ELEMENT_STATE_BITS::STATE_EMPTY => "empty",
-					ELEMENT_STATE_BITS::STATE_ANCHOR => "anchor",
-					ELEMENT_STATE_BITS::STATE_SYNTHETIC => "synthetic",
-					ELEMENT_STATE_BITS::STATE_OWNS_POPUP => "owns_popup",
-					ELEMENT_STATE_BITS::STATE_TABFOCUS => "tabfocus",
-					ELEMENT_STATE_BITS::STATE_IS_RTL => "is_rtl",
-					ELEMENT_STATE_BITS::STATE_IS_LTR => "is_ltr",
-					ELEMENT_STATE_BITS::STATE_DRAG_OVER => "drag_over",
-					ELEMENT_STATE_BITS::STATE_DROP_TARGET => "drop_target",
-					ELEMENT_STATE_BITS::STATE_MOVING => "moving",
-					ELEMENT_STATE_BITS::STATE_COPYING => "copying",
-					ELEMENT_STATE_BITS::STATE_DRAG_SOURCE => "drag_source",
-					ELEMENT_STATE_BITS::STATE_DROP_MARKER => "drop_marker",
+			fn state_name(bits: u32) -> &'static str {
+				match bits {
+					0x00000001 => "link",
+					0x00000002 => "hover",
+					0x00000004 => "active",
+					0x00000010 => "visited",
+					0x00000008 => "focus",
+					0x08000000 => "popup",
+					0x00000020 => "current",
+					0x00000040 => "checked",
+					0x00000200 => "expanded",
+					0x00000400 => "collapsed",
+					0x00000080 => "disabled",
+					0x00000800 => "incomplete",
+					0x00080000 => "busy",
+					0x00001000 => "animating",
+					0x00002000 => "",
+					0x00000100 => "readonly",
+					0x00040000 => "empty",
+					0x00004000 => "anchor",
+					0x00008000 => "synthetic",
+					0x00010000 => "owns_popup",
+					0x00020000 => "tabfocus",
+					0x20000000 => "is_rtl",
+					0x10000000 => "is_ltr",
+					0x00100000 => "drag_over",
+					0x00200000 => "drop_target",
+					0x00400000 => "moving",
+					0x00800000 => "copying",
+					0x01000000 => "drag_source",
+					0x02000000 => "drop_marker",
 
-					ELEMENT_STATE_BITS::STATE_READY => "",
-					ELEMENT_STATE_BITS::STATE_PRESSED => "pressed",
+					0x40000000 => "",
+					0x04000000 => "pressed",
 
-					ELEMENT_STATE_BITS::STATE_NONE => "",
+					0x00000000 => "",
+					_ => "",
 				}
 			}
 
 			// "tag#id.class:state1:state2..."
-			let state = self.get_state() as u32;
+			let state = self.get_state().bits();
 
 			write!(f, "{{{}", self)?;
 			for i in 0..31 {
-				let bit = state & (1 << i);
-				if bit != 0 {
-					let state_bit: ELEMENT_STATE_BITS = unsafe { mem::transmute(bit) };
-					let name = state_name(&state_bit);
+				let bit = 1 << i;
+				if (state & bit) != 0 {
+					let name = state_name(bit);
 					if !name.is_empty() {
 						write!(f, ":{}", name)?;
 					}

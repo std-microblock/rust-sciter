@@ -213,7 +213,7 @@ impl Host {
 
 		let func = _event_handler_window_proc::<Handler>;
 		let flags = dom::event::default_events();
-		(_API.SciterWindowAttachEventHandler)(hwnd, func, ptr as LPVOID, flags as UINT);
+		(_API.SciterWindowAttachEventHandler)(hwnd, func, ptr as LPVOID, flags.bits() as UINT);
 	}
 
 	/// Set callback for Sciter engine events.

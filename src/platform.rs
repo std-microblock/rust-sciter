@@ -80,7 +80,7 @@ mod windows {
 		/// Create a new native window.
 		fn create(&mut self, rc: RECT, flags: UINT, parent: HWINDOW) -> HWINDOW {
 
-			if (flags & SCITER_CREATE_WINDOW_FLAGS::SW_MAIN as u32) != 0 {
+			if (flags & SCITER_CREATE_WINDOW_FLAGS::SW_MAIN.bits()) != 0 {
 				OsWindow::init_app();
 			}
 
@@ -225,7 +225,7 @@ mod linux {
 		/// Create a new native window.
 		fn create(&mut self, rc: RECT, flags: UINT, parent: HWINDOW) -> HWINDOW {
 
-			if (flags & SCITER_CREATE_WINDOW_FLAGS::SW_MAIN as u32) != 0 {
+			if (flags & SCITER_CREATE_WINDOW_FLAGS::SW_MAIN.bits()) != 0 {
 				OsWindow::init_app();
 			}
 
@@ -385,7 +385,7 @@ mod macos {
 		/// Create a new native window.
 		fn create(&mut self, rc: RECT, flags: UINT, parent: HWINDOW) -> HWINDOW {
 
-			if (flags & SCITER_CREATE_WINDOW_FLAGS::SW_MAIN as u32) != 0 {
+			if (flags & SCITER_CREATE_WINDOW_FLAGS::SW_MAIN.bits()) != 0 {
 				OsWindow::init_app();
 			}
 
@@ -430,7 +430,7 @@ mod macos {
 		/// Show or maximize window.
 		fn expand(&self, maximize: bool) {
 			let wnd = self.window();
-			if (self.flags & SCITER_CREATE_WINDOW_FLAGS::SW_TITLEBAR as UINT) != 0 {
+			if (self.flags & SCITER_CREATE_WINDOW_FLAGS::SW_TITLEBAR.bits()) != 0 {
 				let app = OsWindow::get_app();
 				let _: () = unsafe { msg_send!(app, activateIgnoringOtherApps:true) };
 			}

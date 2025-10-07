@@ -133,10 +133,8 @@ impl sciter::EventHandler for EventHandler {
 }
 
 fn check_options() {
-	sciter::set_options(sciter::RuntimeOptions::ScriptFeatures(
-		sciter::SCRIPT_RUNTIME_FEATURES::ALLOW_SYSINFO as u8		// Enables `Sciter.machineName()`
-		| sciter::SCRIPT_RUNTIME_FEATURES::ALLOW_FILE_IO as u8	// Enables opening file dialog (`view.selectFile()`)
-	)).ok();
+	let mask = (sciter::SCRIPT_RUNTIME_FEATURES::ALLOW_SYSINFO | sciter::SCRIPT_RUNTIME_FEATURES::ALLOW_FILE_IO).bits() as u8;
+	sciter::set_options(sciter::RuntimeOptions::ScriptFeatures(mask)).ok();
 
 	for arg in std::env::args() {
 		if arg.starts_with("--sciter-gfx=") {

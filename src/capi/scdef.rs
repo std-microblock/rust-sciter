@@ -4,9 +4,9 @@
 #![allow(dead_code)]
 
 use capi::sctypes::*;
-use capi::scvalue::{VALUE};
-use capi::screquest::{HREQUEST};
-use capi::scdom::{HELEMENT};
+use capi::scvalue::VALUE;
+use capi::screquest::HREQUEST;
+use capi::scdom::HELEMENT;
 use capi::scapi::ISciterAPI;
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -25,7 +25,7 @@ pub enum IDXGISurface {}
 /// implement loading of resources in its own way (for example, images can be loaded from
 /// a database or other resource).
 pub enum LOAD_RESULT {
-	/// Do the default loading if data is not set.
+  /// Do the default loading if data is not set.
   LOAD_DEFAULT,
   /// Discard the request completely (data will not be loaded at the document).
   LOAD_DISCARD,
@@ -40,11 +40,12 @@ pub enum LOAD_RESULT {
 bitflags! {
     #[repr(C)]
     #[allow(missing_docs)]
-    pub struct SCRIPT_RUNTIME_FEATURES: u8 {
-        const ALLOW_FILE_IO = 0x1;
-        const ALLOW_SOCKET_IO = 0x2;
-        const ALLOW_EVAL = 0x4;
-        const ALLOW_SYSINFO = 0x8;
+    pub struct SCRIPT_RUNTIME_FEATURES: u32 {
+        const ALLOW_FILE_IO = 0x00000001;
+        const ALLOW_SOCKET_IO = 0x00000002;
+        const ALLOW_EVAL = 0x00000004;
+        const ALLOW_SYSINFO = 0x00000008;
+        const ALLOW_CMODULES = 0x00000010;
     }
 }
 
@@ -55,25 +56,25 @@ bitflags! {
 #[allow(missing_docs)]
 pub enum GFX_LAYER
 {
-	/// An auto-selected backend.
-	AUTO = 0xFFFF,
+  /// An auto-selected backend.
+  AUTO = 0xFFFF,
 
-	/// Depends on OS: GDI, Cairo or CoreGraphics.
-	CPU = 1,
+  /// Depends on OS: GDI, Cairo or CoreGraphics.
+  CPU = 1,
 
-	/// A software rasterizer for Direct2D (Windows only).
-	#[cfg(windows)]
-	WARP = 2,
+  /// A software rasterizer for Direct2D (Windows only).
+  #[cfg(windows)]
+  WARP = 2,
 
-	/// A hardware Direct2D mode (Windows only).
-	#[cfg(windows)]
-	D2D = 3,
+  /// A hardware Direct2D mode (Windows only).
+  #[cfg(windows)]
+  D2D = 3,
 
-	/// Skia backend with CPU rasterization mode.
-	SKIA_CPU = 4,
+  /// Skia backend with CPU rasterization mode.
+  SKIA_CPU = 4,
 
-	/// Skia backend with OpenGL rendering.
-	SKIA_OPENGL = 5,
+  /// Skia backend with OpenGL rendering.
+  SKIA_OPENGL = 5,
   /// vulkan
   SKIA_VULKAN = 6,
   #[cfg(osx)]
@@ -81,7 +82,7 @@ pub enum GFX_LAYER
   #[cfg(windows)]
   SKIA_DX12 = 8,
   // auto
-  SKIA_GPU = 9,  
+  SKIA_GPU = 9,
 }
 
 #[repr(C)]
@@ -89,7 +90,7 @@ pub enum GFX_LAYER
 /// Various Sciter engine options (global or per-window).
 pub enum SCITER_RT_OPTIONS
 {
-	/// value:TRUE - enable, value:FALSE - disable, enabled by default.
+  /// value:TRUE - enable, value:FALSE - disable, enabled by default.
   SCITER_SMOOTH_SCROLL = 1,
   /// global; value: milliseconds, connection timeout of http client.
   SCITER_CONNECTION_TIMEOUT = 2,
@@ -97,9 +98,9 @@ pub enum SCITER_RT_OPTIONS
   SCITER_HTTPS_ERROR = 3,
   /// value: 0 - system default, 1 - no smoothing, 2 - std smoothing, 3 - clear type.
   SCITER_FONT_SMOOTHING = 4,
-	/// Windows Aero support, value:
-	/// 0 - normal drawing,
-	/// 1 - window has transparent background after calls `DwmExtendFrameIntoClientArea()` or `DwmEnableBlurBehindWindow()`.
+  /// Windows Aero support, value:
+  /// 0 - normal drawing,
+  /// 1 - window has transparent background after calls `DwmExtendFrameIntoClientArea()` or `DwmEnableBlurBehindWindow()`.
   SCITER_TRANSPARENT_WINDOW = 6,
   /// global; value = LPCBYTE, json - GPU black list, see: gpu-blacklist.json resource.
   /// Note: is not used since Sciter 4.
@@ -118,13 +119,91 @@ pub enum SCITER_RT_OPTIONS
   /// value - TRUE/FALSE - window uses per pixel alpha (e.g. `WS_EX_LAYERED`/`UpdateLayeredWindow()` window).
   SCITER_ALPHA_WINDOW  = 12,
   /// global; value: UTF-8 encoded script source to be loaded into each view before any other script execution.
-	SCITER_SET_INIT_SCRIPT = 13,
-	/// per-window; value - TRUE/FALSE - window is main, will destroy all other dependent windows on close.
-	SCITER_SET_MAIN_WINDOW = 14,
-	/// global; value - max request length in megabytes (1024*1024 bytes).
-	SCITER_SET_MAX_HTTP_DATA_LENGTH = 15,
-	/// global or per-window; value 1 - 1px in CSS is treated as 1dip, value 0 - default behavior - 1px is a physical pixel.
-	SCITER_SET_PX_AS_DIP = 16,
+  SCITER_SET_INIT_SCRIPT = 13,
+  /// per-window; value - TRUE/FALSE - window is main, will destroy all other dependent windows on close.
+  SCITER_SET_MAIN_WINDOW = 14,
+  /// global; value - max request length in megabytes (1024*1024 bytes).
+  SCITER_SET_MAX_HTTP_DATA_LENGTH = 15,
+  /// global or per-window; value 1 - 1px in CSS is treated as 1dip, value 0 - default behavior - 1px is a physical pixel.
+  SCITER_SET_PX_AS_DIP = 16,
+  /// global; TRUE/FALSE, enables UIAutomation support.
+  SCITER_ENABLE_UIAUTOMATION = 17,
+  /// global; TRUE - use internal HTTP client, FALSE - use system HTTP client (on platforms that has it: Win,Mac,Lin).
+  SCITER_USE_INTERNAL_HTTP_CLIENT = 18,
+  /// global; TRUE/FALSE, enables/disables extended touchpad support, TRUE by default.
+  SCITER_EXTENDED_TOUCHPAD_SUPPORT = 19,
+  /// global; TRUE/FALSE, enables DirectComposition on Windows 11.
+  /// TRUE by default on Windows 11. Set it to FALSE if window will host child windows.
+  SCITER_ENABLE_DIRECT_COMPOSITION = 20,
+  /// global; const char* certificates, in format acceptable by `mbedtls_x509_crt_parse()`.
+  SCITER_SET_ROOT_CA = 21,
+}
+
+/// Application related operations.
+bitflags! {
+    #[repr(C)]
+    #[allow(missing_docs)]
+    pub struct SCITER_APP_CMD: u32 {
+        /// request to quit message pump loop.
+        const SCITER_APP_STOP = 0;
+        /// run message pump loop until `SCITER_APP_STOP` or main window closure.
+        const SCITER_APP_LOOP = 1;
+        /// pass argc/argv to application: p1 - argc, p2 - CHAR** argv.
+        const SCITER_APP_INIT = 2;
+        /// free resources of the application.
+        const SCITER_APP_SHUTDOWN = 3;
+        /// scapp mode: load JS and run message pump loop until `SCITER_APP_STOP` or main window closure, p1 - JS url, p2 - 0 or `SciterPrimordialLoader`.
+        const SCITER_APP_RUN = 4;
+        /// does single message pump loop iteration, `SCITER_APP_LOOP` is essentially this:
+        /// `while( SciterExec(SCITER_APP_LOOP_ITERATION,0,0) );`
+        const SCITER_APP_LOOP_ITERATION = 6;
+        /// checks outstanding tasks and timers,
+        /// like `SCITER_APP_LOOP_ITERATION` but without message processing.
+        const SCITER_APP_LOOP_HEARTBIT = 7;
+    }
+}
+
+/// Sciter "Primordial" Loader used by `SCITER_APP_RUN`.
+pub type SciterPrimordialLoader = extern "system" fn(url: LPCWSTR, out_pb: *mut LPCBYTE, out_cb: *mut UINT) -> BOOL;
+
+/// Window commands.
+bitflags! {
+    #[repr(C)]
+    #[allow(missing_docs)]
+    pub struct SCITER_WINDOW_CMD: u32 {
+        /// p1 - `SCITER_WINDOW_STATE`, p2 - N/A.
+        const SCITER_WINDOW_SET_STATE = 1;
+        /// p1 - N/A , p2 - N/A, returns `SCITER_WINDOW_STATE`.
+        const SCITER_WINDOW_GET_STATE = 2;
+        /// p1 - BOOL, true - bring_to_front , p2 - N/A.
+        const SCITER_WINDOW_ACTIVATE = 3;
+        /// p1 - const `POINT*`, position, p2 `const SIZE*` - dimension, in ppx, either one can be null.
+        const SCITER_WINDOW_SET_PLACEMENT = 4;
+        /// p1 - `POINT*`, position, p2 `SIZE*` - dimension, in ppx, either one can be null.
+        const SCITER_WINDOW_GET_PLACEMENT = 5;
+
+        // Vulkan related commands (20-22) are more complex and would need custom handling for idiomatic Rust FFI
+        // Given the goal is simple bitflags conversions, these are omitted.
+        // For full FFI, specific structs like SciterVulkanEnvironment/Context and functions would be needed.
+
+        // const SCITER_WINDOW_GET_VULKAN_ENVIRONMENT = 20;
+        // const SCITER_WINDOW_GET_VULKAN_CONTEXT = 21;
+        // const SCITER_WINDOW_SET_VULKAN_BRIDGE = 22;
+    }
+}
+
+/// Window states.
+bitflags! {
+    #[repr(C)]
+    #[allow(missing_docs)]
+    pub struct SCITER_WINDOW_STATE: u32 {
+        const SCITER_WINDOW_STATE_CLOSED = 0;
+        const SCITER_WINDOW_STATE_SHOWN = 1;
+        const SCITER_WINDOW_STATE_MINIMIZED = 2;
+        const SCITER_WINDOW_STATE_MAXIMIZED = 3;
+        const SCITER_WINDOW_STATE_HIDDEN = 4;
+        const SCITER_WINDOW_STATE_FULL_SCREEN = 5;
+    }
 }
 
 /// Window flags
@@ -157,9 +236,9 @@ bitflags! {
 }
 
 impl Default for SCITER_CREATE_WINDOW_FLAGS {
-	fn default() -> Self {
-		SCITER_CREATE_WINDOW_FLAGS::SW_CHILD
-	}
+  fn default() -> Self {
+    SCITER_CREATE_WINDOW_FLAGS::SW_CHILD
+  }
 }
 
 #[repr(C)]
@@ -170,31 +249,31 @@ pub enum SCITER_NOTIFICATION {
   SC_ATTACH_BEHAVIOR = 4,
   SC_ENGINE_DESTROYED = 5,
   SC_POSTED_NOTIFICATION = 6,
-	SC_GRAPHICS_CRITICAL_FAILURE = 7,
-	SC_KEYBOARD_REQUEST = 8,
-	SC_INVALIDATE_RECT = 9,
+  SC_GRAPHICS_CRITICAL_FAILURE = 7,
+  SC_KEYBOARD_REQUEST = 8,
+  SC_INVALIDATE_RECT = 9,
 }
 
 #[repr(C)]
 #[derive(Debug, PartialEq)]
 /// The type of a loaded resource.
 pub enum RESOURCE_TYPE {
-	/// HTML document.
-	HTML = 0,
-	/// Image.
-	IMAGE = 1,
-	/// CSS.
-	STYLE = 2,
-	/// Mouse cursor image.
-	CURSOR = 3,
-	/// TIScript document.
-	SCRIPT = 4,
-	/// Any data.
-	RAW = 5,
-	/// Font.
-	FONT,
-	/// Sound (wav bytes).
-	SOUND,
+  /// HTML document.
+  HTML = 0,
+  /// Image.
+  IMAGE = 1,
+  /// CSS.
+  STYLE = 2,
+  /// Mouse cursor image.
+  CURSOR = 3,
+  /// TIScript document.
+  SCRIPT = 4,
+  /// Any data.
+  RAW = 5,
+  /// Font.
+  FONT,
+  /// Sound (wav bytes).
+  SOUND,
 }
 
 /// The type of a loaded resource.
@@ -206,7 +285,7 @@ pub type SCITER_RESOURCE_TYPE = RESOURCE_TYPE;
 /// Notifies that Sciter is about to download a referred resource.
 pub struct SCN_LOAD_DATA
 {
-	/// `SC_LOAD_DATA` here.
+  /// `SC_LOAD_DATA` here.
   pub code: UINT,
   /// `HWINDOW` of the window this callback was attached to.
   pub hwnd: HWINDOW,
@@ -236,7 +315,7 @@ pub struct SCN_LOAD_DATA
 /// This notification indicates that external data (for example, image) download process has been completed.
 pub struct SCN_DATA_LOADED
 {
-	/// `SC_DATA_LOADED` here.
+  /// `SC_DATA_LOADED` here.
   pub code: UINT,
   /// `HWINDOW` of the window this callback was attached to.
   pub hwnd: HWINDOW,
@@ -261,7 +340,7 @@ pub struct SCN_DATA_LOADED
 /// having non empty `behavior: ` style attribute value.
 pub struct SCN_ATTACH_BEHAVIOR
 {
-	/// `SC_ATTACH_BEHAVIOR` here.
+  /// `SC_ATTACH_BEHAVIOR` here.
   pub code: UINT,
   /// `HWINDOW` of the window this callback was attached to.
   pub hwnd: HWINDOW,
@@ -281,12 +360,12 @@ pub struct SCN_ATTACH_BEHAVIOR
 /// mobiles can show soft keyboard by handling it.
 pub struct SCN_KEYBOARD_REQUEST
 {
-	/// `SC_KEYBOARD_REQUEST` here.
+  /// `SC_KEYBOARD_REQUEST` here.
   pub code: UINT,
   /// `HWINDOW` of the window this callback was attached to.
-	pub hwnd: HWINDOW,
+  pub hwnd: HWINDOW,
 
-	pub keyboard_mode: UINT,
+  pub keyboard_mode: UINT,
 }
 
 #[repr(C)]
@@ -294,20 +373,20 @@ pub struct SCN_KEYBOARD_REQUEST
 /// needs to be redrawn.
 pub struct SCN_INVALIDATE_RECT
 {
-	/// `SC_INVALIDATE_RECT` here.
+  /// `SC_INVALIDATE_RECT` here.
   pub code: UINT,
   /// `HWINDOW` of the window this callback was attached to.
   pub hwnd: HWINDOW,
 
-	/// Coordinates of the invalidated area.
-	pub invalid_rect: RECT,
+  /// Coordinates of the invalidated area.
+  pub invalid_rect: RECT,
 }
 
 #[repr(C)]
 pub struct SCITER_CALLBACK_NOTIFICATION
 {
-	pub code: UINT,
-	pub hwnd: HWINDOW,
+  pub code: UINT,
+  pub hwnd: HWINDOW,
 }
 pub type LPSCITER_CALLBACK_NOTIFICATION = *mut SCITER_CALLBACK_NOTIFICATION;
 
@@ -322,7 +401,7 @@ pub type ElementEventProc = extern "system" fn (tag: LPVOID, he: HELEMENT, evtg:
 /// Debug output categories.
 pub enum OUTPUT_SUBSYTEMS
 {
-	/// html parser & runtime
+  /// html parser & runtime
   DOM = 0,
   /// csss! parser & runtime
   CSSS,

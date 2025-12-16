@@ -495,21 +495,21 @@ pub fn set_host_api(api: &'static ISciterAPI) {
 /// Use [`sciter::version()`](fn.version.html) instead which returns the complete version string.
 pub fn version_num() -> u32 {
 	use types::BOOL;
-	let v1 = (_API.SciterVersion)(true as BOOL);
-	let v2 = (_API.SciterVersion)(false as BOOL);
-	let (major, minor, revision, _build) = (v1 >> 16 & 0xFF, v1 & 0xFF, v2 >> 16 & 0xFF, v2 & 0xFF);
-	let num = (major << 24) | (minor << 16) | (revision << 8);
-	// let num = ((v1 >> 16) << 24) | ((v1 & 0xFFFF) << 16) | ((v2 >> 16) << 8) | (v2 & 0xFFFF);
-	return num;
+  let version = ((_API.SciterVersion)(0) as u32) << 24 |
+                  ((_API.SciterVersion)(1) as u32) << 16 |
+                  ((_API.SciterVersion)(2) as u32) << 8;
+  return version;
 }
 
 /// Sciter engine version string (e.g. "`3.3.2.0`").
 pub fn version() -> String {
 	use types::BOOL;
-	let v1 = (_API.SciterVersion)(true as BOOL);
-	let v2 = (_API.SciterVersion)(false as BOOL);
-	let num = [v1 >> 16, v1 & 0xFFFF, v2 >> 16, v2 & 0xFFFF];
-	let version = format!("{}.{}.{}.{}", num[0], num[1], num[2], num[3]);
+	let version = format!("{}.{}.{}.{}",
+    (_API.SciterVersion)(0),
+    (_API.SciterVersion)(1),
+    (_API.SciterVersion)(2),
+    (_API.SciterVersion)(3)
+  );
 	return version;
 }
 

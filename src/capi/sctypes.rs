@@ -24,6 +24,7 @@ pub type WPARAM = size_t;
 pub type LPARAM = ssize_t;
 
 pub type UINT_PTR = uintptr_t;
+pub type INT_PTR = intptr_t;
 pub type LRESULT = ssize_t;
 
 pub type CHAR = c_char;

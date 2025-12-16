@@ -6,7 +6,6 @@ use capi::sctypes::*;
 use capi::scdef::*;
 use capi::scdom::*;
 use capi::scvalue::*;
-use capi::sctiscript::{HVM, tiscript_value, tiscript_native_interface};
 use capi::scbehavior::*;
 use capi::scgraphics::SciterGraphicsAPI;
 use capi::screquest::{SciterRequestAPI, HREQUEST, REQUEST_PARAM};
@@ -23,17 +22,22 @@ pub struct ISciterAPI
 	pub version: UINT,
 
 	pub SciterClassName: extern "system" fn () -> LPCWSTR,
-	pub SciterVersion: extern "system" fn (major: BOOL) -> UINT,
+	pub SciterVersion: extern "system" fn (num: u32) -> UINT,
 
 	pub SciterDataReady: extern "system" fn (hwnd: HWINDOW, uri: LPCWSTR, data: LPCBYTE, dataLength: UINT) -> BOOL,
 	pub SciterDataReadyAsync: extern "system" fn (hwnd: HWINDOW, uri: LPCWSTR, data: LPCBYTE, dataLength: UINT, requestId: HREQUEST) -> BOOL,
 
-  // #ifdef WINDOWS
-  #[cfg_attr(not(all(windows, not(feature = "windowless"))), deprecated(note = "Windows only"))]
+    // #ifdef WINDOWS
+    #[cfg(all(windows, not(feature = "windowless")))]
 	pub SciterProc: extern "system" fn (hwnd: HWINDOW, msg: UINT, wParam: WPARAM, lParam: LPARAM) -> LRESULT,
-	#[cfg_attr(not(all(windows, not(feature = "windowless"))), deprecated(note = "Windows only"))]
+    #[cfg(not(all(windows, not(feature = "windowless"))))]
+    pub SciterProc: Option<extern "system" fn (hwnd: HWINDOW, msg: UINT, wParam: WPARAM, lParam: LPARAM) -> LRESULT>,
+
+    #[cfg(all(windows, not(feature = "windowless")))]
 	pub SciterProcND: extern "system" fn (hwnd: HWINDOW, msg: UINT, wParam: WPARAM, lParam: LPARAM, pbHandled: * mut BOOL) -> LRESULT,
-  // #endif
+    #[cfg(not(all(windows, not(feature = "windowless"))))]
+    pub SciterProcND: Option<extern "system" fn (hwnd: HWINDOW, msg: UINT, wParam: WPARAM, lParam: LPARAM, pbHandled: * mut BOOL) -> LRESULT>,
+    // #endif
 
 	pub SciterLoadFile: extern "system" fn (hWndSciter: HWINDOW, filename: LPCWSTR) -> BOOL,
 
@@ -50,39 +54,55 @@ pub struct ISciterAPI
 	pub SciterEval: extern "system" fn (hwnd: HWINDOW, script: LPCWSTR, scriptLength: UINT, pretval: * mut VALUE) -> BOOL,
 	pub SciterUpdateWindow: extern "system" fn (hwnd: HWINDOW) -> VOID,
 
-  // #ifdef WINDOWS
-  #[cfg_attr(not(all(windows, not(feature = "windowless"))), deprecated(note = "Windows only"))]
+    // #ifdef WINDOWS
+    #[cfg(all(windows, not(feature = "windowless")))]
 	pub SciterTranslateMessage: extern "system" fn (lpMsg: LPMSG) -> BOOL,
-  // #endif
+    #[cfg(not(all(windows, not(feature = "windowless"))))]
+    pub SciterTranslateMessage: Option<extern "system" fn (lpMsg: LPMSG) -> BOOL>,
+    // #endif
 
 	pub SciterSetOption: extern "system" fn (hWnd: HWINDOW, option: SCITER_RT_OPTIONS, value: UINT_PTR) -> BOOL,
 	pub SciterGetPPI: extern "system" fn (hWndSciter: HWINDOW, px: * mut UINT, py: * mut UINT) -> VOID,
 	pub SciterGetViewExpando: extern "system" fn (hwnd: HWINDOW, pval: * mut VALUE) -> BOOL,
 
-  // #ifdef WINDOWS
-  #[cfg_attr(not(all(windows, not(feature = "windowless"))), deprecated(note = "Windows only"))]
+    // #ifdef WINDOWS
+    #[cfg(all(windows, not(feature = "windowless")))]
 	pub SciterRenderD2D: extern "system" fn (hWndSciter: HWINDOW, prt: * mut ID2D1RenderTarget) -> BOOL,
-	#[cfg_attr(not(all(windows, not(feature = "windowless"))), deprecated(note = "Windows only"))]
+    #[cfg(not(all(windows, not(feature = "windowless"))))]
+    pub SciterRenderD2D: Option<extern "system" fn (hWndSciter: HWINDOW, prt: * mut ID2D1RenderTarget) -> BOOL>,
+
+    #[cfg(all(windows, not(feature = "windowless")))]
 	pub SciterD2DFactory: extern "system" fn (ppf: * mut* mut ID2D1Factory) -> BOOL,
-	#[cfg_attr(not(all(windows, not(feature = "windowless"))), deprecated(note = "Windows only"))]
+    #[cfg(not(all(windows, not(feature = "windowless"))))]
+    pub SciterD2DFactory: Option<extern "system" fn (ppf: * mut* mut ID2D1Factory) -> BOOL>,
+
+    #[cfg(all(windows, not(feature = "windowless")))]
 	pub SciterDWFactory: extern "system" fn (ppf: * mut* mut IDWriteFactory) -> BOOL,
-  // #endif
+    #[cfg(not(all(windows, not(feature = "windowless"))))]
+    pub SciterDWFactory: Option<extern "system" fn (ppf: * mut* mut IDWriteFactory) -> BOOL>,
+    // #endif
 
 	pub SciterGraphicsCaps: extern "system" fn (pcaps: LPUINT) -> BOOL,
 	pub SciterSetHomeURL: extern "system" fn (hWndSciter: HWINDOW, baseUrl: LPCWSTR) -> BOOL,
 
-  // #if defined(OSX)
-	#[cfg_attr(not(all(target_os="macos", not(feature = "windowless"))), deprecated(note = "macOS only"))]
+    // #if defined(OSX)
+    #[cfg(all(target_os="macos", not(feature = "windowless")))]
 	pub SciterCreateNSView: extern "system" fn (frame: LPRECT) -> HWINDOW, // returns NSView*
-  // #endif
+    #[cfg(not(all(target_os="macos", not(feature = "windowless"))))]
+    pub SciterCreateNSView: Option<extern "system" fn (frame: LPRECT) -> HWINDOW>,
+    // #endif
 
-  // #if defined(LINUX)
-	#[cfg_attr(not(all(target_os="linux", not(feature = "windowless"))), deprecated(note = "Linux only"))]
+    // #if defined(LINUX)
+    #[cfg(all(target_os="linux", not(feature = "windowless")))]
 	pub SciterCreateWidget: extern "system" fn (frame: LPRECT) -> HWINDOW, // returns GtkWidget
-  // #endif
+    #[cfg(not(all(target_os="linux", not(feature = "windowless"))))]
+    pub SciterCreateWidget: Option<extern "system" fn (frame: LPRECT) -> HWINDOW>,
+    // #endif
 
-	#[cfg_attr(feature = "windowless", deprecated(note = "Windowed only"))]
+    #[cfg(not(feature = "windowless"))]
 	pub SciterCreateWindow: extern "system" fn (creationFlags: UINT, frame: LPCRECT, delegate: * const SciterWindowDelegate, delegateParam: LPVOID, parent: HWINDOW) -> HWINDOW,
+    #[cfg(feature = "windowless")]
+    pub SciterCreateWindow: Option<extern "system" fn (creationFlags: UINT, frame: LPCRECT, delegate: * const SciterWindowDelegate, delegateParam: LPVOID, parent: HWINDOW) -> HWINDOW>,
 
 	pub SciterSetupDebugOutput: extern "system" fn (hwndOrNull: HWINDOW, param: LPVOID, pfOutput: DEBUG_OUTPUT_PROC),
 
@@ -164,11 +184,8 @@ pub struct ISciterAPI
 	pub SciterSetValue: extern "system" fn (he: HELEMENT, pval: * const VALUE) -> SCDOM_RESULT,
 	pub SciterGetExpando: extern "system" fn (he: HELEMENT, pval: * mut VALUE, forceCreation: BOOL) -> SCDOM_RESULT,
 
-	#[deprecated(since="Sciter 4.4.3.24", note="TIScript native API is gone, use SOM instead.")]
-	pub SciterGetObject: extern "system" fn (he: HELEMENT, pval: * mut tiscript_value, forceCreation: BOOL) -> SCDOM_RESULT,
-
-	#[deprecated(since="Sciter 4.4.3.24", note="TIScript native API is gone, use SOM instead.")]
-	pub SciterGetElementNamespace: extern "system" fn (he: HELEMENT, pval: * mut tiscript_value) -> SCDOM_RESULT,
+    pub SciterGetObject: Option<extern "system" fn()>,
+    pub SciterGetElementNamespace: Option<extern "system" fn()>,
 
 	pub SciterGetHighlightedElement: extern "system" fn (hwnd: HWINDOW, phe: * mut HELEMENT) -> SCDOM_RESULT,
 	pub SciterSetHighlightedElement: extern "system" fn (hwnd: HWINDOW, he: HELEMENT) -> SCDOM_RESULT,
@@ -187,7 +204,7 @@ pub struct ISciterAPI
 	pub SciterNodeNthChild: extern "system" fn (hnode: HNODE, n: UINT, phn: * mut HNODE) -> SCDOM_RESULT,
 	pub SciterNodeChildrenCount: extern "system" fn (hnode: HNODE, pn: * mut UINT) -> SCDOM_RESULT,
 	pub SciterNodeType: extern "system" fn (hnode: HNODE, pNodeType: * mut UINT /*NODE_TYPE*/) -> SCDOM_RESULT,
-	pub SciterNodeGetText: extern "system" fn (hnode: HNODE, rcv: * mut LPCWSTR_RECEIVER, rcv_param: LPVOID) -> SCDOM_RESULT,
+	pub SciterNodeGetText: extern "system" fn (hnode: HNODE, rcv: LPCWSTR_RECEIVER, rcv_param: LPVOID) -> SCDOM_RESULT,
 	pub SciterNodeSetText: extern "system" fn (hnode: HNODE, text: LPCWSTR, textLength: UINT) -> SCDOM_RESULT,
 	pub SciterNodeInsert: extern "system" fn (hnode: HNODE, how: UINT /*NODE_INS_TARGET*/, what: HNODE) -> SCDOM_RESULT,
 	pub SciterNodeRemove: extern "system" fn (hnode: HNODE, finalize: BOOL) -> SCDOM_RESULT,
@@ -225,72 +242,65 @@ pub struct ISciterAPI
 	pub ValueNativeFunctorSet: extern "system" fn (pval: * mut VALUE, pinvoke: NATIVE_FUNCTOR_INVOKE, prelease: NATIVE_FUNCTOR_RELEASE, tag: LPVOID) -> VALUE_RESULT,
 	pub ValueIsNativeFunctor: extern "system" fn (pval: * const VALUE) -> BOOL,
 
-	// tiscript VM API
+    pub reserved1: Option<extern "system" fn()>, // For TIScriptAPI
+    pub reserved2: Option<extern "system" fn()>, // For SciterGetVM
+    pub reserved3: Option<extern "system" fn()>, // For Sciter_v2V
+    pub reserved4: Option<extern "system" fn()>, // For Sciter_V2v
 
-	#[deprecated(since="Sciter 4.4.3.24", note="TIScript native API is gone, use SOM instead.")]
-	pub TIScriptAPI: extern "system" fn () -> * mut tiscript_native_interface,
-
-	#[deprecated(since="Sciter 4.4.3.24", note="TIScript native API is gone, use SOM instead.")]
-	pub SciterGetVM: extern "system" fn (hwnd: HWINDOW) -> HVM,
-
-	// since 3.1.0.12
-	#[deprecated(since="Sciter 4.4.3.24", note="TIScript native API is gone, use SOM instead.")]
-	pub Sciter_v2V: extern "system" fn (vm: HVM, script_value: tiscript_value, value: * mut VALUE, isolate: BOOL) -> BOOL,
-
-	#[deprecated(since="Sciter 4.4.3.24", note="TIScript native API is gone, use SOM instead.")]
-	pub Sciter_V2v: extern "system" fn (vm: HVM, valuev: * const VALUE, script_value: * mut tiscript_value) -> BOOL,
-
-	// since 3.1.0.18
 	pub SciterOpenArchive: extern "system" fn (archiveData: LPCBYTE, archiveDataLength: UINT) -> HSARCHIVE,
 	pub SciterGetArchiveItem: extern "system" fn (harc: HSARCHIVE, path: LPCWSTR, pdata: * mut LPCBYTE, pdataLength: * mut UINT) -> BOOL,
 	pub SciterCloseArchive: extern "system" fn (harc: HSARCHIVE) -> BOOL,
 
-	// since 3.2.0.0
 	pub SciterFireEvent: extern "system" fn (evt: * const BEHAVIOR_EVENT_PARAMS, post: BOOL, handled: * mut BOOL) -> SCDOM_RESULT,
 
 	pub SciterGetCallbackParam: extern "system" fn (hwnd: HWINDOW) -> LPVOID,
 	pub SciterPostCallback: extern "system" fn (hwnd: HWINDOW, wparam: UINT_PTR, lparam: UINT_PTR, timeoutms: UINT) -> UINT_PTR,
 
-	// since 3.3.1.0
 	pub GetSciterGraphicsAPI: extern "system" fn () -> * const SciterGraphicsAPI,
-
-	// since 3.3.1.6
 	pub GetSciterRequestAPI: extern "system" fn () -> * const SciterRequestAPI,
 
-  // #ifdef WINDOWS
-  // since 3.3.1.4
-  #[cfg_attr(not(all(windows, not(feature = "windowless"))), deprecated(note = "Windows only"))]
+    // #ifdef WINDOWS
+    #[cfg(all(windows, not(feature = "windowless")))]
 	pub SciterCreateOnDirectXWindow: extern "system" fn (hwnd: HWINDOW, pSwapChain: * mut IDXGISwapChain) -> BOOL,
-	#[cfg_attr(not(all(windows, not(feature = "windowless"))), deprecated(note = "Windows only"))]
-	pub SciterRenderOnDirectXWindow: extern "system" fn (hwnd: HWINDOW, elementToRenderOrNull: HELEMENT, frontLayer: BOOL) -> BOOL,
-	#[cfg_attr(not(all(windows, not(feature = "windowless"))), deprecated(note = "Windows only"))]
-	pub SciterRenderOnDirectXTexture: extern "system" fn (hwnd: HWINDOW, elementToRenderOrNull: HELEMENT, surface: * mut IDXGISurface) -> BOOL,
-  // #endif
+    #[cfg(not(all(windows, not(feature = "windowless"))))]
+    pub SciterCreateOnDirectXWindow: Option<extern "system" fn (hwnd: HWINDOW, pSwapChain: * mut IDXGISwapChain) -> BOOL>,
 
-  // since 4.0.0.0
+    #[cfg(all(windows, not(feature = "windowless")))]
+	pub SciterRenderOnDirectXWindow: extern "system" fn (hwnd: HWINDOW, elementToRenderOrNull: HELEMENT, frontLayer: BOOL) -> BOOL,
+    #[cfg(not(all(windows, not(feature = "windowless"))))]
+    pub SciterRenderOnDirectXWindow: Option<extern "system" fn (hwnd: HWINDOW, elementToRenderOrNull: HELEMENT, frontLayer: BOOL) -> BOOL>,
+
+    #[cfg(all(windows, not(feature = "windowless")))]
+	pub SciterRenderOnDirectXTexture: extern "system" fn (hwnd: HWINDOW, elementToRenderOrNull: HELEMENT, surface: * mut IDXGISurface) -> BOOL,
+    #[cfg(not(all(windows, not(feature = "windowless"))))]
+    pub SciterRenderOnDirectXTexture: Option<extern "system" fn (hwnd: HWINDOW, elementToRenderOrNull: HELEMENT, surface: * mut IDXGISurface) -> BOOL>,
+    // #endif
+
 	pub SciterProcX: extern "system" fn(hwnd: HWINDOW, msg: * const SCITER_X_MSG) -> BOOL,
 
-	// since 4.4.2.14
 	pub SciterAtomValue: extern "system" fn(name: LPCSTR) -> som_atom_t,
 	pub SciterAtomNameCB: extern "system" fn(atomv: som_atom_t, rcv: LPCSTR_RECEIVER, rcv_param: LPVOID) -> BOOL,
 
-	// since 4.4.2.16
 	pub SciterSetGlobalAsset: extern "system" fn(pass: *mut som_asset_t) -> BOOL,
 
-	// since 4.4.4.7
-	pub SciterGetElementAsset: extern "system" fn(el: HELEMENT, atomv: som_atom_t, pass: *mut *mut som_asset_t) -> SCDOM_RESULT,
+	pub SciterGetElementAsset: extern "system" fn(el: HELEMENT, nameAtom: som_atom_t, ppass: *mut *mut som_asset_t) -> SCDOM_RESULT,
 
-	// since 4.4.4.6 (yet disabled)
-	// since 4.4.8.26
 	/// Set global value by path.
-	pub SciterSetVariable: extern "system" fn(hwndOrNull: HWINDOW, path: LPCSTR, value: *const VALUE) -> SCDOM_RESULT,
+	pub SciterSetVariable: extern "system" fn(hwndOrNull: HWINDOW, path: LPCSTR, pvalToSet: *const VALUE) -> SCDOM_RESULT,
 	/// Get global value by path.
-	pub SciterGetVariable: extern "system" fn(hwndOrNull: HWINDOW, path: LPCSTR, value: *mut VALUE) -> SCDOM_RESULT,
+	pub SciterGetVariable: extern "system" fn(hwndOrNull: HWINDOW, path: LPCSTR, pvalToGet: *mut VALUE) -> SCDOM_RESULT,
 
-	// since 4.4.5.4
 	pub SciterElementUnwrap: extern "system" fn(pval: *const VALUE, ppElement: *mut HELEMENT) -> SCDOM_RESULT,
 	pub SciterElementWrap: extern "system" fn(pval: *mut VALUE, pElement: HELEMENT) -> SCDOM_RESULT,
-	pub SciterNodeUnwrap: extern "system" fn(pval: *const VALUE, ppElement: *mut HNODE) -> SCDOM_RESULT,
-	pub SciterNodeWrap: extern "system" fn(pval: *mut VALUE, pElement: HNODE) -> SCDOM_RESULT,
+	pub SciterNodeUnwrap: extern "system" fn(pval: *const VALUE, ppNode: *mut HNODE) -> SCDOM_RESULT,
+	pub SciterNodeWrap: extern "system" fn(pval: *mut VALUE, pNode: HNODE) -> SCDOM_RESULT,
 
+    pub SciterReleaseGlobalAsset: extern "system" fn(pass: *mut som_asset_t) -> BOOL,
+
+    pub SciterExec: extern "system" fn(appCmd: UINT, p1: UINT_PTR, p2: UINT_PTR) -> INT_PTR,
+    pub SciterWindowExec: extern "system" fn(hwnd: HWINDOW, windowCmd: UINT, p1: UINT, p2: UINT) -> INT_PTR,
+
+    pub SciterEGLGetProcAddress: extern "system" fn(procName: *const CHAR) -> *const VOID, // Should be `proc_ptr_t` if defined
+    pub SciterEGLSendEvent: extern "system" fn(he: HELEMENT, eventCode: UINT, reason: UINT_PTR) -> SCDOM_RESULT,
+    pub SciterRequestAnimationFrameEvent: extern "system" fn(he: HELEMENT, eventCode: UINT, reason: UINT_PTR) -> SCDOM_RESULT,
 }

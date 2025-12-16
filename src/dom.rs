@@ -591,7 +591,7 @@ impl Element {
 		let mut handled = false as BOOL;
 		let r = reason.unwrap_or(CLICK_REASON::SYNTHESIZED);
 		let s = source.unwrap_or(self.he);
-		let ok = (_API.SciterSendEvent)(self.he, code as u32, s, r as UINT_PTR, &mut handled);
+		let ok = (_API.SciterSendEvent)(self.he, code.bits(), s, r as UINT_PTR, &mut handled);
 		ok_or!(handled != 0, ok)
 	}
 
@@ -599,7 +599,7 @@ impl Element {
 	pub fn post_event(&self, code: BEHAVIOR_EVENTS, reason: Option<CLICK_REASON>, source: Option<HELEMENT>) -> Result<()> {
 		let r = reason.unwrap_or(CLICK_REASON::SYNTHESIZED);
 		let s = source.unwrap_or(self.he);
-		let ok = (_API.SciterPostEvent)(self.he, code as u32, s, r as UINT_PTR);
+		let ok = (_API.SciterPostEvent)(self.he, code.bits(), s, r as UINT_PTR);
 		ok_or!((), ok)
 	}
 
@@ -607,7 +607,7 @@ impl Element {
 	pub fn fire_event(&self, code: BEHAVIOR_EVENTS, reason: Option<CLICK_REASON>, source: Option<HELEMENT>, post: bool, data: Option<Value>) -> Result<bool> {
 		let mut handled = false as BOOL;
 		let mut params = BEHAVIOR_EVENT_PARAMS {
-			cmd: code as UINT,
+			cmd: code.bits(),
 			reason: reason.unwrap_or(CLICK_REASON::SYNTHESIZED) as UINT_PTR,
 			he: source.unwrap_or(self.he),
 			heTarget: self.he,
@@ -632,7 +632,7 @@ impl Element {
 	pub fn broadcast_event(&self, name: &str, post: bool, data: Option<Value>) -> Result<bool> {
 		let name = s2w!(name);
 		let mut  params = BEHAVIOR_EVENT_PARAMS {
-			cmd: BEHAVIOR_EVENTS::CUSTOM as UINT,
+			cmd: BEHAVIOR_EVENTS::CUSTOM.bits(),
 			heTarget: HELEMENT!(),
 			reason: 0,
 			he: self.he,

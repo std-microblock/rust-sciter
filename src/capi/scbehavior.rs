@@ -208,20 +208,19 @@ bitflags! {
     }
 }
 
-#[repr(C)]
-#[derive(Copy, Clone)]
-#[derive(Debug, PartialOrd, PartialEq)]
 /// Event propagation schema.
-pub enum PHASE_MASK
-{
-	/// Bubbling phase – direction: from a child element to all its containers.
-	BUBBLING 				= 0,
-	/// Sinking phase – direction: from containers to target child element.
-	SINKING  				= 0x0_8000,
-	/// Bubbling event consumed by some element.
-	BUBBLING_HANDLED= 0x1_0000,
-	/// Sinking event consumed by some child.
-	SINKING_HANDLED = 0x1_8000,
+bitflags! {
+    #[repr(C)]
+    pub struct PHASE_MASK: u32 {
+        /// Bubbling phase – direction: from a child element to all its containers.
+        const BUBBLING = 0;
+        /// Sinking phase – direction: from containers to target child element.
+        const SINKING = 0x8000;
+        /// Bubbling event consumed by some element.
+        const BUBBLING_HANDLED = 0x10000;
+        /// Sinking event consumed by some child.
+        const SINKING_HANDLED = 0x18000;
+    }
 }
 
 #[repr(C)]
@@ -349,196 +348,179 @@ pub enum EDIT_CHANGED_REASON
 	CHANGE_BY_CODE,
 }
 
-#[repr(C)]
-#[derive(Copy, Clone)]
-#[derive(Debug, PartialOrd, PartialEq)]
 /// Behavior event codes.
-pub enum BEHAVIOR_EVENTS
-{
-	/// click on button
-	BUTTON_CLICK = 0,
-	/// mouse down or key down in button
-	BUTTON_PRESS,
-	/// checkbox/radio/slider changed its state/value
-	BUTTON_STATE_CHANGED,
-	/// before text change
-	EDIT_VALUE_CHANGING,
-	/// after text change
-	EDIT_VALUE_CHANGED,
-	/// selection in `<select>` is changed
-	SELECT_SELECTION_CHANGED,
-	// node in select expanded/collapsed, heTarget is the node - OBSOLETE since 4.4.4.9
-	// SELECT_STATE_CHANGED,
-	/// value of `<select>` is changed
-	SELECT_VALUE_CHANGED,
+bitflags! {
+    #[repr(C)]
+    pub struct BEHAVIOR_EVENTS: u32 {
+        /// click on button
+        const BUTTON_CLICK = 0;
+        /// mouse down or key down in button
+        const BUTTON_PRESS = 1;
+        /// checkbox/radio/slider changed its state/value
+        const BUTTON_STATE_CHANGED = 2;
+        /// before text change
+        const EDIT_VALUE_CHANGING = 3;
+        /// after text change
+        const EDIT_VALUE_CHANGED = 4;
+        /// selection in `<select>` is changed
+        const SELECT_SELECTION_CHANGED = 5;
+        /// value of `<select>` is changed
+        const SELECT_VALUE_CHANGED = 6;
 
-	/// request to show popup just received,
-	///     here DOM of popup element can be modifed.
-	POPUP_REQUEST,
+        /// request to show popup just received,
+        ///     here DOM of popup element can be modifed.
+        const POPUP_REQUEST = 7;
 
-	/// popup element has been measured and ready to be shown on screen,
-	///     here you can use functions like `ScrollToView`.
-	POPUP_READY,
+        /// popup element has been measured and ready to be shown on screen,
+        ///     here you can use functions like `ScrollToView`.
+        const POPUP_READY = 8;
 
-	/// popup element is closed,
-	///     here DOM of popup element can be modifed again - e.g. some items can be removed to free memory.
-	POPUP_DISMISSED,
+        /// popup element is closed,
+        ///     here DOM of popup element can be modifed again - e.g. some items can be removed to free memory.
+        const POPUP_DISMISSED = 9;
 
-	/// menu item activated by mouse hover or by keyboard,
-	MENU_ITEM_ACTIVE,
+        /// menu item activated by mouse hover or by keyboard,
+        const MENU_ITEM_ACTIVE = 10;
 
-	/// menu item click,
-	///   BEHAVIOR_EVENT_PARAMS structure layout
-	///   BEHAVIOR_EVENT_PARAMS.cmd - MENU_ITEM_CLICK/MENU_ITEM_ACTIVE
-	///   BEHAVIOR_EVENT_PARAMS.heTarget - owner(anchor) of the menu
-	///   BEHAVIOR_EVENT_PARAMS.he - the menu item, presumably `<li>` element
-	///   BEHAVIOR_EVENT_PARAMS.reason - BY_MOUSE_CLICK | BY_KEY_CLICK
-	MENU_ITEM_CLICK,
+        /// menu item click,
+        ///   BEHAVIOR_EVENT_PARAMS structure layout
+        ///   BEHAVIOR_EVENT_PARAMS.cmd - MENU_ITEM_CLICK/MENU_ITEM_ACTIVE
+        ///   BEHAVIOR_EVENT_PARAMS.heTarget - owner(anchor) of the menu
+        ///   BEHAVIOR_EVENT_PARAMS.he - the menu item, presumably `<li>` element
+        ///   BEHAVIOR_EVENT_PARAMS.reason - BY_MOUSE_CLICK | BY_KEY_CLICK
+        const MENU_ITEM_CLICK = 11;
 
+        /// "right-click", BEHAVIOR_EVENT_PARAMS::he is current popup menu `HELEMENT` being processed or `NULL`.
+        /// application can provide its own `HELEMENT` here (if it is `NULL`) or modify current menu element.
+        const CONTEXT_MENU_REQUEST = 0x10;
 
+        /// broadcast notification, sent to all elements of some container being shown or hidden
+        const VISIUAL_STATUS_CHANGED = 0x11;
+        /// broadcast notification, sent to all elements of some container that got new value of `:disabled` state
+        const DISABLED_STATUS_CHANGED = 0x12;
 
+        /// popup is about to be closed
+        const POPUP_DISMISSING = 0x13;
 
+        /// content has been changed, is posted to the element that gets content changed,  reason is combination of `CONTENT_CHANGE_BITS`.
+        /// `target == NULL` means the window got new document and this event is dispatched only to the window.
+        const CONTENT_CHANGED = 0x15;
 
+        /// generic click
+        const CLICK = 0x16;
+        /// generic change
+        const CHANGE = 0x17;
 
+        /// media changed (screen resolution, number of displays, etc.)
+        const MEDIA_CHANGED = 0x18;
+        /// input language has changed, data is iso lang-country string
+        const INPUT_LANGUAGE_CHANGED = 0x19;
+        /// editable content has changed
+        const CONTENT_MODIFIED = 0x1A;
+        /// a broadcast notification being posted to all elements of some container
+        /// that changes its `:read-only` state.
+        const READONLY_STATUS_CHANGED = 0x1B;
+        /// change in `aria-live="polite|assertive"`
+        const ARIA_LIVE_AREA_CHANGED = 0x1C;
 
-	/// "right-click", BEHAVIOR_EVENT_PARAMS::he is current popup menu `HELEMENT` being processed or `NULL`.
-	/// application can provide its own `HELEMENT` here (if it is `NULL`) or modify current menu element.
-	CONTEXT_MENU_REQUEST = 0x10,
+        // "grey" event codes  - notfications from behaviors from this SDK
+        /// hyperlink click
+        const HYPERLINK_CLICK = 0x80;
 
+        const PASTE_TEXT = 0x8E;
+        const PASTE_HTML = 0x8F;
 
-	/// broadcast notification, sent to all elements of some container being shown or hidden
-	VISIUAL_STATUS_CHANGED,
-	/// broadcast notification, sent to all elements of some container that got new value of `:disabled` state
-	DISABLED_STATUS_CHANGED,
+        /// element was collapsed, so far only `behavior:tabs` is sending these two to the panels
+        const ELEMENT_COLLAPSED = 0x90;
+        /// element was expanded,
+        const ELEMENT_EXPANDED = 0x91;
 
-	/// popup is about to be closed
-	POPUP_DISMISSING,
+        /// activate (select) child,
+        /// used, for example, by `accesskeys` behaviors to send activation request, e.g. tab on `behavior:tabs`.
+        const ACTIVATE_CHILD = 0x92;
 
-	/// content has been changed, is posted to the element that gets content changed,  reason is combination of `CONTENT_CHANGE_BITS`.
-	/// `target == NULL` means the window got new document and this event is dispatched only to the window.
-	CONTENT_CHANGED = 0x15,
+        /// ui state changed, observers shall update their visual states.
+        /// is sent, for example, by `behavior:richtext` when caret position/selection has changed.
+        const UI_STATE_CHANGED = 0x95;
 
+        /// `behavior:form` detected submission event. `BEHAVIOR_EVENT_PARAMS::data` field contains data to be posted.
+        /// `BEHAVIOR_EVENT_PARAMS::data` is of type `T_MAP` in this case key/value pairs of data that is about
+        /// to be submitted. You can modify the data or discard submission by returning true from the handler.
+        const FORM_SUBMIT = 0x96;
 
-	/// generic click
-	CLICK = 0x16,
-	/// generic change
-	CHANGE = 0x17,
+        /// `behavior:form` detected reset event (from `button type=reset`). `BEHAVIOR_EVENT_PARAMS::data` field contains data to be reset.
+        /// `BEHAVIOR_EVENT_PARAMS::data` is of type `T_MAP` in this case key/value pairs of data that is about
+        /// to be rest. You can modify the data or discard reset by returning true from the handler.
+        const FORM_RESET = 0x97;
 
-	/// media changed (screen resolution, number of displays, etc.)
-	MEDIA_CHANGED = 0x18,
-	/// input language has changed, data is iso lang-country string
-	INPUT_LANGUAGE_CHANGED = 0x19,
-	/// editable content has changed
-	CONTENT_MODIFIED = 0x1A,
-	/// a broadcast notification being posted to all elements of some container
-	/// that changes its `:read-only` state.
-	READONLY_STATUS_CHANGED = 0x1B,
-	/// change in `aria-live="polite|assertive"`
-	ARIA_LIVE_AREA_CHANGED = 0x1C,
+        /// document in `behavior:frame` or root document is complete.
+        const DOCUMENT_COMPLETE = 0x98;
 
-	// "grey" event codes  - notfications from behaviors from this SDK
-	/// hyperlink click
-	HYPERLINK_CLICK = 0x80,
+        /// requests to `behavior:history` (commands)
+        const HISTORY_PUSH = 0x99;
+        const HISTORY_DROP = 0x9A;
+        const HISTORY_PRIOR = 0x9B;
+        const HISTORY_NEXT = 0x9C;
+        /// `behavior:history` notification - history stack has changed
+        const HISTORY_STATE_CHANGED = 0x9D;
 
-	PASTE_TEXT = 0x8E,
-	PASTE_HTML = 0x8F,
+        /// close popup request,
+        const CLOSE_POPUP = 0x9E;
+        /// request tooltip, `evt.source` <- is the tooltip element.
+        const TOOLTIP_REQUEST = 0x9F;
 
-	/// element was collapsed, so far only `behavior:tabs` is sending these two to the panels
-	ELEMENT_COLLAPSED = 0x90,
-	/// element was expanded,
-	ELEMENT_EXPANDED,
+        /// animation started (`reason=1`) or ended(`reason=0`) on the element.
+        const ANIMATION = 0xA0;
 
-	/// activate (select) child,
-	/// used, for example, by `accesskeys` behaviors to send activation request, e.g. tab on `behavior:tabs`.
-	ACTIVATE_CHILD,
+        /// document created, script namespace initialized. `target` -> the document
+        const DOCUMENT_CREATED = 0xC0;
+        /// document is about to be closed, to cancel closing do: `evt.data = sciter::Value("cancel")`;
+        const DOCUMENT_CLOSE_REQUEST = 0xC1;
+        /// last notification before document removal from the DOM
+        const DOCUMENT_CLOSE = 0xC2;
+        /// document has got DOM structure, styles and behaviors of DOM elements. Script loading run is complete at this moment.
+        const DOCUMENT_READY = 0xC3;
+        /// document just finished parsing - has got DOM structure. This event is generated before the `DOCUMENT_READY`.
+        /// Since 4.0.3.
+        const DOCUMENT_PARSED = 0xC4;
 
-	/// ui state changed, observers shall update their visual states.
-	/// is sent, for example, by `behavior:richtext` when caret position/selection has changed.
-	UI_STATE_CHANGED = 0x95,
+        /// `<video>` "ready" notification
+        const VIDEO_INITIALIZED = 0xD1;
+        /// `<video>` playback started notification
+        const VIDEO_STARTED = 0xD2;
+        /// `<video>` playback stoped/paused notification
+        const VIDEO_STOPPED = 0xD3;
+        /// `<video>` request for frame source binding,
+        ///   If you want to provide your own video frames source for the given target `<video>` element do the following:
+        ///
+        ///   1. Handle and consume this `VIDEO_BIND_RQ` request
+        ///   2. You will receive second `VIDEO_BIND_RQ` request/event for the same `<video>` element
+        ///      but this time with the `reason` field set to an instance of `sciter::video_destination` interface.
+        ///   3. `add_ref()` it and store it, for example, in a worker thread producing video frames.
+        ///   4. call `sciter::video_destination::start_streaming(...)` providing needed parameters
+        ///      call `sciter::video_destination::render_frame(...)` as soon as they are available
+        ///      call `sciter::video_destination::stop_streaming()` to stop the rendering (a.k.a. end of movie reached)
+        const VIDEO_BIND_RQ = 0xD4;
 
+        /// `behavior:pager` starts pagination
+        const PAGINATION_STARTS = 0xE0;
+        /// `behavior:pager` paginated page no, reason -> page no
+        const PAGINATION_PAGE = 0xE1;
+        /// `behavior:pager` end pagination, reason -> total pages
+        const PAGINATION_ENDS = 0xE2;
 
-	/// `behavior:form` detected submission event. `BEHAVIOR_EVENT_PARAMS::data` field contains data to be posted.
-	/// `BEHAVIOR_EVENT_PARAMS::data` is of type `T_MAP` in this case key/value pairs of data that is about
-	/// to be submitted. You can modify the data or discard submission by returning true from the handler.
-	FORM_SUBMIT,
+        /// event with custom name.
+        /// Since 4.2.8.
+        const CUSTOM = 0xF0;
 
+        /// SSX, delayed mount_component
+        const MOUNT_COMPONENT = 0xF1;
 
-	/// `behavior:form` detected reset event (from `button type=reset`). `BEHAVIOR_EVENT_PARAMS::data` field contains data to be reset.
-	/// `BEHAVIOR_EVENT_PARAMS::data` is of type `T_MAP` in this case key/value pairs of data that is about
-	/// to be rest. You can modify the data or discard reset by returning true from the handler.
-	FORM_RESET,
-
-
-
-	/// document in `behavior:frame` or root document is complete.
-	DOCUMENT_COMPLETE,
-
-	/// requests to `behavior:history` (commands)
-	HISTORY_PUSH,
-	HISTORY_DROP,
-	HISTORY_PRIOR,
-	HISTORY_NEXT,
-	/// `behavior:history` notification - history stack has changed
-	HISTORY_STATE_CHANGED,
-
-	/// close popup request,
-	CLOSE_POPUP,
-	/// request tooltip, `evt.source` <- is the tooltip element.
-	TOOLTIP_REQUEST,
-
-	/// animation started (`reason=1`) or ended(`reason=0`) on the element.
-	ANIMATION         = 0xA0,
-
-	/// document created, script namespace initialized. `target` -> the document
-	DOCUMENT_CREATED  = 0xC0,
-	/// document is about to be closed, to cancel closing do: `evt.data = sciter::Value("cancel")`;
-	DOCUMENT_CLOSE_REQUEST,
-	/// last notification before document removal from the DOM
-	DOCUMENT_CLOSE,
-	/// document has got DOM structure, styles and behaviors of DOM elements. Script loading run is complete at this moment.
-	DOCUMENT_READY,
-	/// document just finished parsing - has got DOM structure. This event is generated before the `DOCUMENT_READY`.
-	/// Since 4.0.3.
-	DOCUMENT_PARSED   = 0xC4,
-
-	/// `<video>` "ready" notification
-	VIDEO_INITIALIZED = 0xD1,
-	/// `<video>` playback started notification
-	VIDEO_STARTED,
-	/// `<video>` playback stoped/paused notification
-	VIDEO_STOPPED,
-	/// `<video>` request for frame source binding,
-	///   If you want to provide your own video frames source for the given target `<video>` element do the following:
-	///
-	///   1. Handle and consume this `VIDEO_BIND_RQ` request
-	///   2. You will receive second `VIDEO_BIND_RQ` request/event for the same `<video>` element
-	///      but this time with the `reason` field set to an instance of `sciter::video_destination` interface.
-	///   3. `add_ref()` it and store it, for example, in a worker thread producing video frames.
-	///   4. call `sciter::video_destination::start_streaming(...)` providing needed parameters
-	///      call `sciter::video_destination::render_frame(...)` as soon as they are available
-	///      call `sciter::video_destination::stop_streaming()` to stop the rendering (a.k.a. end of movie reached)
-	VIDEO_BIND_RQ,
-
-
-	/// `behavior:pager` starts pagination
-	PAGINATION_STARTS  = 0xE0,
-	/// `behavior:pager` paginated page no, reason -> page no
-	PAGINATION_PAGE,
-	/// `behavior:pager` end pagination, reason -> total pages
-	PAGINATION_ENDS,
-
-	/// event with custom name.
-	/// Since 4.2.8.
-	CUSTOM						 = 0xF0,
-
-	/// SSX, delayed mount_component
-	MOUNT_COMPONENT    = 0xF1,
-
-	/// all custom event codes shall be greater than this number. All codes below this will be used
-	/// solely by application - Sciter will not intrepret it and will do just dispatching.
-	/// To send event notifications with  these codes use `SciterSend`/`PostEvent` API.
-	FIRST_APPLICATION_EVENT_CODE = 0x100,
-
+        /// all custom event codes shall be greater than this number. All codes below this will be used
+        /// solely by application - Sciter will not intrepret it and will do just dispatching.
+        /// To send event notifications with  these codes use `SciterSend`/`PostEvent` API.
+        const FIRST_APPLICATION_EVENT_CODE = 0x100;
+    }
 }
 
 
